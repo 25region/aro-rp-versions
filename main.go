@@ -10,6 +10,7 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/25region/go-training/get-rp-version/pkg/version"
 	"github.com/lensesio/tableprinter"
 	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
@@ -18,9 +19,10 @@ import (
 var log = logrus.New()
 
 type flags struct {
+	debug    bool
 	location []string
 	output   string
-	debug    bool
+	version  bool
 }
 
 type OCPVersion struct {
@@ -111,9 +113,11 @@ func processLocation(location string, ch chan Result) {
 func parseFlags() flags {
 
 	var f flags
+	flag.BoolVarP(&f.debug, "debug", "d", false, "enable debugging output")
 	flag.StringSliceVarP(&f.location, "location", "l", []string{}, "comma-separated Azure regions")
 	flag.StringVarP(&f.output, "output", "o", "table", "defines output format (table|json)")
-	flag.BoolVarP(&f.debug, "debug", "d", false, "enable debugging output")
+	flag.BoolVarP(&f.version, "version", "v", false, "version")
+
 	flag.Parse()
 
 	return f
@@ -127,6 +131,11 @@ func main() {
 	log.SetOutput(os.Stdout)
 	if flags.debug {
 		log.Level = logrus.DebugLevel
+	}
+
+	if flags.version {
+		version.Print()
+		os.Exit(0)
 	}
 
 	var locations []string

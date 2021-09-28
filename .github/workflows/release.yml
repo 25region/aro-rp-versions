@@ -1,0 +1,35 @@
+name: Release aro-rp-versions binaries
+on:
+  push:
+    branches:
+    - main
+    tags:
+    - v*
+jobs:
+  releases-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, darwin, windows]
+        goarch: [amd64]
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.42.1
+          skip-go-installation: true
+          skip-pkg-cache: true
+          skip-build-cache: true
+      - name: Run tests
+        run: go test -v -p=1 -timeout=0 ./...
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          install-only: true
+          version: v0.162.0
+      - name: Run GoReleaser
+        run: make release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
