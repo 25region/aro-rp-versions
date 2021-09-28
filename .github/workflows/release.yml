@@ -1,8 +1,6 @@
 name: Release aro-rp-versions binaries
 on:
   push:
-    branches:
-    - main
     tags:
     - v*
   pull_request:
