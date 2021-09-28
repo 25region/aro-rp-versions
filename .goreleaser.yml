@@ -15,9 +15,6 @@ builds:
       - amd64
 archives:
 - replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
     amd64: x86_64
 snapshot:
   name_template: "{{ .Tag }}-next"
