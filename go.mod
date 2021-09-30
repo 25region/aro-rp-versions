@@ -1,4 +1,4 @@
-module github.com/25region/go-training/get-rp-version
+module github.com/25region/aro-rp-versions
 
 go 1.17
 

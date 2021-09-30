@@ -10,7 +10,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/25region/go-training/get-rp-version/pkg/version"
+	"github.com/25region/aro-rp-versions/pkg/version"
 	"github.com/lensesio/tableprinter"
 	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
