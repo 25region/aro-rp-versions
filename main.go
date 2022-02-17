@@ -147,7 +147,7 @@ func main() {
 			"eastus2euap", "westcentralus", "australiaeast", "japaneast", "koreacentral",
 			"australiasoutheast", "centralindia", "southindia", "japanwest", "eastasia",
 			"centralus", "eastus", "eastus2", "northcentralus", "southcentralus",
-			"westus", "westus2", "canadacentral", "canadaeast", "francecentral",
+			"westus", "westus2", "westus3", "canadacentral", "canadaeast", "francecentral",
 			"germanywestcentral", "northeurope", "norwayeast", "norwaywest", "switzerlandnorth", "switzerlandwest",
 			"westeurope", "brazilsouth", "brazilsoutheast", "southeastasia", "uaenorth",
 			"southafricanorth", "uksouth", "ukwest",
