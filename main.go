@@ -152,6 +152,7 @@ func main() {
 			"canadaeast",
 			"centralindia",
 			"centralus",
+			"centraluseuap",
 			"eastasia",
 			"eastus",
 			"eastus2",
