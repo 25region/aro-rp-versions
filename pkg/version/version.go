@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	Version = "v0.1.7"
+	Version = "v0.2.0"
 )
 
 func Print() {

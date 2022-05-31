@@ -14,6 +14,7 @@ import (
 	"github.com/lensesio/tableprinter"
 	"github.com/sirupsen/logrus"
 	flag "github.com/spf13/pflag"
+	yaml "gopkg.in/yaml.v3"
 )
 
 var log = logrus.New()
@@ -91,6 +92,8 @@ func getRPVersions(location string) (string, error) {
 
 func processLocation(location string, ch chan Result) {
 
+	log.Debugf("processing location: %s", location)
+
 	ocpVersions, err := getOCPVersions(location)
 	if err != nil {
 		log.Debugf("failed to get OCP versions for %q location: %s", location, err)
@@ -142,45 +145,21 @@ func main() {
 	if len(flags.location) > 0 {
 		locations = flags.location
 	} else {
-		// TODO: Pull dynamically eventually
-		locations = []string{
-			"australiaeast",
-			"australiasoutheast",
-			"brazilsouth",
-			"brazilsoutheast",
-			"canadacentral",
-			"canadaeast",
-			"centralindia",
-			"centralus",
-			"centraluseuap",
-			"eastasia",
-			"eastus",
-			"eastus2",
-			"eastus2euap",
-			"francecentral",
-			"germanywestcentral",
-			"japaneast",
-			"japanwest",
-			"koreacentral",
-			"northcentralus",
-			"northeurope",
-			"norwayeast",
-			"norwaywest",
-			"southafricanorth",
-			"southcentralus",
-			"southeastasia",
-			"southindia",
-			"switzerlandnorth",
-			"switzerlandwest",
-			"uaenorth",
-			"uksouth",
-			"ukwest",
-			"westcentralus",
-			"westeurope",
-			"westus",
-			"westus2",
-			"westus3",
+
+		yamlFile, err := os.Open("locations.yaml")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
+		defer yamlFile.Close()
+
+		bytes, _ := ioutil.ReadAll(yamlFile)
+		errYaml := yaml.Unmarshal(bytes, &locations)
+		if errYaml != nil {
+			fmt.Println(errYaml)
+			os.Exit(1)
+		}
+
 	}
 
 	locationsCount := len(locations)
