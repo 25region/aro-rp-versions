@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +17,9 @@ import (
 	flag "github.com/spf13/pflag"
 	yaml "gopkg.in/yaml.v3"
 )
+
+//go:embed locations.yaml
+var f embed.FS
 
 var log = logrus.New()
 
@@ -146,7 +150,7 @@ func main() {
 		locations = flags.location
 	} else {
 
-		yamlFile, err := os.Open("locations.yaml")
+		yamlFile, err := f.Open("locations.yaml")
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
