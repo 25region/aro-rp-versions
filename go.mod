@@ -1,6 +1,6 @@
 module github.com/25region/aro-rp-versions
 
-go 1.17
+go 1.21
 
 require (
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7

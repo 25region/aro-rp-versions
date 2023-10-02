@@ -5,23 +5,31 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
+	"io"
 	"os"
 	"sort"
 	"sync"
 
+	"github.com/25region/aro-rp-versions/pkg/logger"
+	"github.com/25region/aro-rp-versions/pkg/ocp"
 	"github.com/25region/aro-rp-versions/pkg/version"
 	"github.com/lensesio/tableprinter"
 	"github.com/sirupsen/logrus"
+
 	flag "github.com/spf13/pflag"
 	yaml "gopkg.in/yaml.v3"
 )
 
+const locationsFilePath = "locations.yaml"
+
+type Result struct {
+	Location    string   `header:"Location" json:"location"`
+	RPVersion   string   `header:"RPVersion" json:"rpVersion"`
+	OCPVersions []string `header:"OCPVersions" json:"ocpVersions"`
+}
+
 //go:embed locations.yaml
 var f embed.FS
-
-var log = logrus.New()
 
 type flags struct {
 	debug    bool
@@ -30,82 +38,40 @@ type flags struct {
 	version  bool
 }
 
-type OCPVersion struct {
-	Version string `json:"version"`
-}
+func getLocationsFromFile(path string) []string {
 
-type Result struct {
-	Location    string   `header:"Location" json:"location"`
-	RPVersion   string   `header:"RPVersion" json:"rpVersion"`
-	OCPVersions []string `header:"OCPVersions" json:"ocpVersions"`
-}
+	var locations = []string{}
 
-func getOCPVersions(location string) ([]string, error) {
-
-	url := "https://arorpversion.blob.core.windows.net/ocpversions/" + location
-
-	res, err := http.Get(url)
-
-	if err != nil || res.StatusCode != http.StatusOK {
-		log.Debugf("failed to pull ocp versions for %q: %s", location, err)
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	jsonData, err := ioutil.ReadAll(res.Body)
+	yamlFile, err := f.Open(path)
 	if err != nil {
-		log.Debugf("failed to read requests body for %q: %s", location, err)
-		return nil, err
+		logger.Log.Fatalf("error: %v\n", err)
 	}
+	defer yamlFile.Close()
 
-	var ocpVersions []OCPVersion
-	err = json.Unmarshal(jsonData, &ocpVersions)
+	bytes, _ := io.ReadAll(yamlFile)
 	if err != nil {
-		log.Debugf("failed to unmarshal ocp versions for %q: %s", location, err)
-		return nil, err
+		logger.Log.Fatalf("error: %v\n", err)
+	}
+	errYaml := yaml.Unmarshal(bytes, &locations)
+	if errYaml != nil {
+		logger.Log.Fatalf("error: %v\n", errYaml)
 	}
 
-	var result []string
-	for _, version := range ocpVersions {
-		result = append(result, fmt.Sprint(version.Version))
-	}
-
-	return result, nil
-}
-
-func getRPVersions(location string) (string, error) {
-
-	url := "https://arorpversion.blob.core.windows.net/rpversion/" + location
-
-	res, err := http.Get(url)
-
-	if err != nil || res.StatusCode != http.StatusOK {
-		log.Debugf("failed to pull rp version for %q: %s", location, err)
-		return "", err
-	}
-	defer res.Body.Close()
-
-	commitVersion, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Debugf("failed to read requests body for %q: %s", location, err)
-		return "", err
-	}
-
-	return string(commitVersion), nil
+	return locations
 }
 
 func processLocation(location string, ch chan Result) {
 
-	log.Debugf("processing location: %s", location)
+	logger.Log.Debugf("processing location: %s", location)
 
-	ocpVersions, err := getOCPVersions(location)
+	ocpVersions, err := ocp.GetOCPVersions(location)
 	if err != nil {
-		log.Debugf("failed to get OCP versions for %q location: %s", location, err)
+		logger.Log.Debugf("failed to get OCP versions for %q location: %s", location, err)
 	}
 
-	rpVersion, err := getRPVersions(location)
+	rpVersion, err := ocp.GetRPVersions(location)
 	if err != nil {
-		log.Debugf("failed to get RP version for %q location: %s", location, err)
+		logger.Log.Debugf("failed to get RP version for %q location: %s", location, err)
 	}
 
 	locationResult := Result{
@@ -134,10 +100,10 @@ func main() {
 
 	flags := parseFlags()
 
-	// Configure logging level
-	log.SetOutput(os.Stdout)
+	// Configure loggerging level
+	logger.Log.SetOutput(os.Stdout)
 	if flags.debug {
-		log.Level = logrus.DebugLevel
+		logger.Log.Level = logrus.DebugLevel
 	}
 
 	if flags.version {
@@ -149,23 +115,8 @@ func main() {
 	if len(flags.location) > 0 {
 		locations = flags.location
 	} else {
-
-		yamlFile, err := f.Open("locations.yaml")
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer yamlFile.Close()
-
-		bytes, _ := ioutil.ReadAll(yamlFile)
-		errYaml := yaml.Unmarshal(bytes, &locations)
-		if errYaml != nil {
-			fmt.Println(errYaml)
-			os.Exit(1)
-		}
-
+		locations = getLocationsFromFile(locationsFilePath)
 	}
-
 	locationsCount := len(locations)
 
 	var wg sync.WaitGroup
@@ -202,12 +153,12 @@ func main() {
 		var err error
 		in, err := json.Marshal(results)
 		if err != nil {
-			log.Fatalf("failed to marshal the result in json format: %s", err)
+			logger.Log.Fatalf("failed to marshal the result in json format: %s", err)
 		}
 		var out bytes.Buffer
 		err = json.Indent(&out, []byte(in), "", "  ")
 		if err != nil {
-			log.Fatalf("failed to output the result in json format: %s", err)
+			logger.Log.Fatalf("failed to output the result in json format: %s", err)
 		}
 		fmt.Println(&out)
 
